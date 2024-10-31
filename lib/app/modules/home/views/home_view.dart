@@ -1,19 +1,71 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:musicapp/app/data/model/artist.dart';
 import 'package:musicapp/app/data/model/artist_album.dart';
 import 'package:musicapp/app/data/model/track.dart';
 import 'package:musicapp/app/data/repository/music_repo.dart';
-import '../controllers/home_controller.dart';
 import 'drawer_menu.dart';
 import 'search_results_view.dart';
 import 'playerview.dart';
 import 'music_screen.dart';
 
-class HomeView extends GetView<HomeController> {
+class HomeView extends StatefulWidget {
   HomeView({Key? key}) : super(key: key);
 
+  @override
+  _HomeViewState createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final TextEditingController _searchController = TextEditingController();
+  String? _notificationMessage; // Variabel untuk menyimpan pesan notifikasi terakhir
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFirebaseMessaging();
+  }
+
+  void _initializeFirebaseMessaging() {
+    // Mendapatkan token perangkat untuk keperluan pengujian notifikasi
+    _firebaseMessaging.getToken().then((token) {
+      print("Device Token: $token");
+    });
+
+    // Menghandle notifikasi ketika aplikasi dalam kondisi Foreground
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      setState(() {
+        _notificationMessage = message.notification?.body ?? 'No message body';
+      });
+      _showNotificationDialog(message);
+    });
+
+    // Menghandle notifikasi ketika aplikasi dalam kondisi Background atau Terminated
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      setState(() {
+        _notificationMessage = message.notification?.body ?? 'No message body';
+      });
+    });
+  }
+
+  // Menampilkan dialog notifikasi ketika aplikasi dalam kondisi Foreground
+  void _showNotificationDialog(RemoteMessage message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(message.notification?.title ?? 'Notification'),
+        content: Text(message.notification?.body ?? 'No message body'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,19 +101,44 @@ class HomeView extends GetView<HomeController> {
       actions: [
         GestureDetector(
           onTap: () {
-            // Navigate to ProfileView (implementation to be added)
+            // Tampilkan notifikasi terakhir jika ada
+            if (_notificationMessage != null) {
+              _showNotificationContent();
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("No new notifications")),
+              );
+            }
           },
           child: const Padding(
             padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              radius: 22,
-              backgroundImage: AssetImage('assets/images/avatar.png'),
+            child: Icon(
+              Icons.notifications,
+              color: Colors.black87,
+              size: 28,
             ),
           ),
         ),
         const SizedBox(width: 16),
       ],
       iconTheme: const IconThemeData(color: Colors.black),
+    );
+  }
+
+  // Dialog untuk menampilkan notifikasi terakhir yang diterima
+  void _showNotificationContent() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Last Notification"),
+        content: Text(_notificationMessage ?? "No message available"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -72,7 +149,7 @@ class HomeView extends GetView<HomeController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
           Text(
-            'Hello nico',
+            'Hello Nico',
             style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.bold,
@@ -119,8 +196,8 @@ class HomeView extends GetView<HomeController> {
   Widget _buildArtistSection() {
     return FutureBuilder<List<dynamic>>(
       future: Future.wait([
-        MusicRepo.getArtists(), // Future to get artists
-        MusicRepo.getArtistAlbums(), // Future to get albums
+        MusicRepo.getArtists(),
+        MusicRepo.getArtistAlbums(),
       ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -131,23 +208,21 @@ class HomeView extends GetView<HomeController> {
           return const Center(child: Text('No artists or albums found'));
         }
 
-        // snapshot.data![0] contains the list of artists
-        // snapshot.data![1] contains the list of albums
         final artists = snapshot.data![0] as List<Artist>;
         final albums = snapshot.data![1] as List<Albums>;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTrendingMusicSection(albums), // Passing albums to the trending section
-            _buildTabSection(artists), // Passing artists to the tab section
+            _buildTrendingMusicSection(albums),
+            _buildTabSection(artists),
           ],
         );
       },
     );
   }
 
-
+  // Bagian untuk menampilkan musik trending
   Widget _buildTrendingMusicSection(List<Albums> albums) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -186,14 +261,13 @@ class HomeView extends GetView<HomeController> {
   Widget _buildAlbumBox(Albums album) {
     return GestureDetector(
       onTap: () async {
-        // Fetch the artist for this album
         Artist? artist = await _getArtistForAlbum(album);
         if (artist != null) {
           Get.to(() => MusicScreen(artist: artist));
         }
       },
       child: Container(
-        width: 150, // Mengatur ukuran tetap untuk tiap item album
+        width: 150,
         margin: const EdgeInsets.only(right: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +304,6 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-
   Future<Artist?> _getArtistForAlbum(Albums album) async {
     if (album.artists?.isNotEmpty ?? false) {
       String artistId = album.artists!.first.id!;
@@ -239,8 +312,6 @@ class HomeView extends GetView<HomeController> {
     }
     return null;
   }
-
-
 
   Widget _buildTabSection(List<Artist> artists) {
     return DefaultTabController(

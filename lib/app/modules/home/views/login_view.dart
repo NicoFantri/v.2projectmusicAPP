@@ -1,25 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/login_controller.dart';
+import '../controllers/auth_controller.dart';
 
-class LoginView extends StatelessWidget {
-  final LoginController controller = Get.put(LoginController());
+class LoginView extends GetView<AuthController> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  void login() {
+    if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+      controller.login(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+    } else {
+      Get.snackbar(
+        'Error',
+        'Please enter both email and password',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Container(
-              height: MediaQuery.of(context).size.height,
-              color: Colors.white,
-              child: Padding(
+      body: Obx(() {
+        return Stack(
+          children: [
+            SingleChildScrollView(
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                color: Colors.white,
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
-                    // Image section
                     ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: Image.asset(
@@ -31,7 +48,7 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
                     const Text(
-                      "Silakan Login !",
+                      "Silakan Login!",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -39,45 +56,23 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Email/Phone input
-                    TextField(
-                      onChanged: (value) => controller.email.value = value,
-                      decoration: InputDecoration(
-                        hintText: 'Email or Phone Number',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[600]),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      ),
+                    _buildTextField(
+                      controller: emailController,
+                      hintText: 'Email or Phone Number',
+                      icon: Icons.email_outlined,
                     ),
                     const SizedBox(height: 16),
-                    // Password input
-                    TextField(
-                      onChanged: (value) => controller.password.value = value,
+                    _buildTextField(
+                      controller: passwordController,
+                      hintText: 'Password',
+                      icon: Icons.lock_outline,
                       obscureText: true,
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[600]),
-                        suffixIcon: Icon(Icons.visibility_off_outlined, color: Colors.grey[600]),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      ),
+                      suffixIcon: Icons.visibility_off_outlined,
                     ),
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: () {}, // Implement Forgot Password functionality
                         child: Text(
                           'Forgot Password?',
                           style: TextStyle(color: Colors.grey[600]),
@@ -85,118 +80,120 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Login button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () => controller.login(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5079FF), // Coral orange color
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildLoginButton(),
                     const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(color: Colors.grey[300], thickness: 1),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('or', style: TextStyle(color: Colors.grey[500])),
-                        ),
-                        Expanded(
-                          child: Divider(color: Colors.grey[300], thickness: 1),
-                        ),
-                      ],
-                    ),
+                    _buildDividerWithText(),
                     const SizedBox(height: 20),
-                    // Apple Sign up button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.apple, color: Colors.black, size: 24),
-                        label: const Text(
-                          'Sign up with Apple',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey[300]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Google Sign up button
-
-                    // Sign up link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't have an account? ",
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                        TextButton(
-                          onPressed: () => Get.toNamed('/signup'),
-                          child: const Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              color: Color(0xFFFF7F50),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildSignUpOption(),
                   ],
                 ),
               ),
             ),
+            if (controller.isLoading.value) _buildLoadingOverlay(),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    bool obscureText = false,
+    IconData? suffixIcon,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: hintText,
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
+        prefixIcon: Icon(icon, color: Colors.grey[600]),
+        suffixIcon: suffixIcon != null
+            ? Icon(suffixIcon, color: Colors.grey[600])
+            : null,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: controller.isLoading.value ? null : () => login(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5079FF),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-          // Skip login button di pojok kanan atas
-          Positioned(
-            top: 40,
-            right: 16,
-            child: IconButton(
-              onPressed: () => controller.skipLoginScreen(),
-              icon: const Icon(
-                Icons.close,
-                color: Colors.black54,
-                size: 28,
-              ),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white,
-                padding: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
+        ),
+        child: controller.isLoading.value
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+          'Login',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDividerWithText() {
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(color: Colors.grey[300], thickness: 1),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('or', style: TextStyle(color: Colors.grey[500])),
+        ),
+        Expanded(
+          child: Divider(color: Colors.grey[300], thickness: 1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignUpOption() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        TextButton(
+          onPressed: () => Get.toNamed('/register'),
+          child: const Text(
+            'Sign Up',
+            style: TextStyle(
+              color: Color(0xFFFF7F50),
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white),
       ),
     );
   }
