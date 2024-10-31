@@ -25,6 +25,10 @@ dependencies:
   provider: ^6.1.2
   webview_flutter: ^4.4.2  # Gunakan versi terbaru
   font_awesome_flutter: ^10.4.0
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.2.0
+  cloud_firestore: ^4.4.5
+  firebase_messaging: ^14.6.0
 
 
 dev_dependencies:
